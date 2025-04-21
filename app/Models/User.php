@@ -49,4 +49,8 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Group::class);
     }
+    public function notes()
+    {
+        return $this->hasMany(Note::class, 'owner_id');
+    }
 }

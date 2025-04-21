@@ -8,5 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Note extends Model
 {
     use HasFactory;
-    protected $fillable = ['title', 'content', 'tags', 'owner_id', 'group_id', 'permissions'];
+    protected $fillable = ['title', 'content', 'owner_id', 'group_id', 'permissions'];
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
 }

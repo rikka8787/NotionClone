@@ -28,8 +28,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                     href={route('Index')}
                                     active={route().current('Index')}
                                 >
-                                    Index
+                                    首頁
                                 </NavLink>
+
                             </div>
                         </div>
 
