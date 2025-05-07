@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; // 軟刪除
 
 class Note extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes; // 使用軟刪除
     protected $fillable = ['title', 'content', 'owner_id', 'group_id', 'permissions'];
     public function owner()
     {

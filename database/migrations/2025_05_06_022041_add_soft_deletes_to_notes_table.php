@@ -10,8 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('group_id')->nullable()->constrained('groups')->onDelete('set null');
+        Schema::table('notes', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -20,9 +20,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['group_id']);
-            $table->dropColumn('group_id');
+        Schema::table('notes', function (Blueprint $table) {
+            if (Schema::hasColumn('notes', 'deleted_at')) {
+                $table->dropSoftDeletes();
+            }
         });
     }
 };

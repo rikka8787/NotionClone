@@ -1,7 +1,11 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 
 export default function Index() {
+    const { notes } = usePage().props;
+    const noteClick = (id) => {
+        window.location.href = route("notes.edit", id);
+    };
     return (
         <AuthenticatedLayout
             header={
@@ -23,6 +27,31 @@ export default function Index() {
                                 >
                                     新增筆記
                                 </Link>
+                            </div>
+                            <div className="mt-4">
+                                {notes &&
+                                    notes.map((note) => (
+                                        <div
+                                            key={note.id}
+                                            onClick={() =>
+                                                noteClick(note.id)
+                                            }
+                                            className="mb-4 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150"
+                                        >
+                                            <h3 className="text-xl font-bold">
+                                                {note.title}
+                                            </h3>
+                                            <p className="mt-2">
+                                                {note.content.length > 10
+                                                    ? `${note.content.substring(
+                                                          0,
+                                                          10
+                                                      )}...`
+                                                    : note.content}
+                                            </p>
+                                            <div className="flex justify-end mt-2"></div>
+                                        </div>
+                                    ))}
                             </div>
                         </div>
                     </div>
