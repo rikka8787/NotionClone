@@ -1,13 +1,34 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
+import { useState, useEffect } from "react";
 
 export default function Edit() {
-    const { note } = usePage().props;
+    const [ canEdit, setCanEdit ] = useState(false);
+    const { note, auth } = usePage().props;
     const { data, setData, put, processing, errors } = useForm({
         title: note.title,
         content: note.content,
+        permissions: note.permissions,
     });
 
+    useEffect(() => {
+        // 檢查當前用戶是否有寫入權限
+        setCanEdit(hasWritePermission());
+    },[]);
+
+    // 檢查當前用戶是否有寫入權限
+    const hasWritePermission = () => {
+        const permissions = String(note.permissions).padStart(3, 0);
+        if(note.owner.id === auth.user.id) {                // 擁有者
+            return (parseInt(permissions[0]) & 2) > 0;
+        } else if(note.group_id === auth.user.group_id) {   // 同群組
+            return (parseInt(permissions[1]) & 2) > 0;
+        } else {                                            // 其他人
+            return (parseInt(permissions[2]) & 2) > 0;
+        }
+    }
+
+    // 更新筆記處理
     const handleSubmit = (e) => {
         e.preventDefault();
         put(route("notes.update", note.id), {
@@ -22,11 +43,16 @@ export default function Edit() {
         });
     };
 
+    // 刪除處理
     const handleDelete = () => {
         if (confirm("確定要刪除這個筆記嗎？")) {
+            if(auth.user.id != note.owner.id) {
+                alert("你沒有權限刪除這個筆記！");
+                return;
+            }
             router.delete(route("notes.destroy", note.id), {
-                preserveScroll: true,
-                preserveState: true,
+                preserveScroll: true,   // 在頁面重新載入會保留滾動位置
+                preserveState: true,    // 在頁面重新載入會保留表單的狀態
                 onSuccess: () => {
                     alert("筆記已刪除！");
                 },
@@ -40,9 +66,27 @@ export default function Edit() {
     return (
         <AuthenticatedLayout
             header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    編輯筆記
-                </h2>
+                <div className="flex justify-between items-center w-full">
+                    <h2 className="text-xl font-semibold leading-tight text-gray-800">
+                        編輯筆記
+                    </h2>
+                    <div className="flex justify-end items-center">
+                        <span className="mr-2 font-semibold">權限：</span>
+                        <select
+                            id="permissions"
+                            value={data.permissions}
+                            onChange={(e) =>
+                                setData("permissions", parseInt(e.target.value))
+                            }
+                            className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                        >
+                            <option value="600">私密</option>
+                            <option value="666">公開(所有人皆可讀寫)</option>
+                            <option value="644">標準(同群組、其他人可讀)</option>
+                            <option value="444">唯讀</option>
+                        </select>
+                    </div>
+                </div>
             }
         >
             <Head title="編輯筆記" />
@@ -50,6 +94,10 @@ export default function Edit() {
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
+                            <div className="mb-4 flex justify-between items-center">
+                                <span className="font-semibold">擁有者：{note.owner.name}</span>
+                                <span className="font-semibold text-red-600">已封存</span>                         
+                            </div>
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-0">
                                     <input
@@ -102,8 +150,13 @@ export default function Edit() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="relative top-0 right-0 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                        disabled={processing}
+                                        className={`relative top-0 right-0 text-white font-bold py-2 px-4 rounded ${
+                                            canEdit
+                                                ? "bg-blue-500 hover:bg-blue-700"
+                                                : "bg-gray-500 hover:bg-gray-700 cursor-not-allowed"
+                                        }`}
+                                        disabled={!canEdit || processing}
+                                        title={!canEdit ? "無編輯權限" : ""}
                                     >
                                         更新筆記
                                     </button>

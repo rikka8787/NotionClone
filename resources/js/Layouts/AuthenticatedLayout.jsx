@@ -74,6 +74,11 @@ export default function AuthenticatedLayout({ header, children }) {
                                         >
                                             Log Out
                                         </Dropdown.Link>
+                                        <Dropdown.Link
+                                            href={route('groups.index')}
+                                        >
+                                            group
+                                        </Dropdown.Link>
                                     </Dropdown.Content>
                                 </Dropdown>
                             </div>

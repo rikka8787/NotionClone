@@ -11,7 +11,7 @@ class NoteController extends Controller
     // 1️⃣ 列出所有筆記
     public function index()
     {
-        $notes = Note::orderBy('id','asc')->get();
+        $notes = Note::with('owner')->get();
         return Inertia::render('Notes/Index', [
             'notes' => $notes
         ]);
@@ -56,6 +56,8 @@ class NoteController extends Controller
     // 5️⃣ 顯示編輯筆記表單
     public function edit(Note $note)
     {
+        $note->load('owner');
+        $note->load('group');
         return Inertia::render('Notes/Edit', [
             'note' => $note
         ]);
