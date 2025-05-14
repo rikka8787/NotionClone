@@ -58,7 +58,41 @@ class GroupController extends Controller
 
     public function join(Request $request)
     {
+        $validated = $request->validate([
+            'group_id' => 'required|exists:groups,id',
+        ], [
+            'group_id.required' => '群組 ID 不能為空！',
+            'group_id.exists' => '所選群組不存在。',
+        ]);
+        $group = Group::find($validated['group_id']);
+        // 檢查使用者是否已經是群組成員
+        if ($group->users->contains(auth()->id())) {
+            return back()->with('error', '你已經是該群組的成員');
+        }
+        $group->users()->attach(auth()->id());
+        return redirect()->route('groups.index')->with('success', '已加入群組！');
+    }
 
+    public function leave(Request $request)
+    {
+        $validated = $request->validate([
+            'group_id' => 'required|exists:groups,id',
+        ], [
+            'group_id.required' => '群組 ID 不能為空！',
+            'group_id.exists' => '所選群組不存在。',
+        ]);
+
+        $group = Group::find($validated['group_id']);
+
+        // 檢查使用者是否為群組成員
+        if (!$group->users->contains(auth()->id())) {
+            return back()->with('error', '你不是該群組的成員');
+        }
+
+        // 移除使用者從群組
+        $group->users()->detach(auth()->id());
+
+        return redirect()->route('groups.index')->with('success', '已離開群組！');
     }
 
     public function show(Group $group)

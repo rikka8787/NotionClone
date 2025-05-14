@@ -3,21 +3,44 @@ import { Head, Link, usePage, router } from "@inertiajs/react";
 import { useState } from "react";
 
 export default function Index() {
-    const { groups, auth } = usePage().props;
+    const { groups, auth, flash } = usePage().props;
     const [loading, setLoading] = useState({});
     console.log(groups);
+
     // 處理加入群組
     const handleJoin = (groupId) => {
         if (loading[groupId]) return;
 
         setLoading(prev => ({ ...prev, [groupId]: true }));
-        router.post(route('groups.join', groupId), {}, {
+        console.log(groupId);
+        router.post(route('groups.join'), {// 如果是Route::post('groups/{group}/join')可以使用post(route('groups.join', groupId))，但我是定義Route::post('groups/join')
+            group_id: groupId,
+        }, {
             onSuccess: () => {
                 setLoading(prev => ({ ...prev, [groupId]: false }));
             },
             onError: () => {
                 setLoading(prev => ({ ...prev, [groupId]: false }));
                 alert('加入群組失敗');
+            },
+        });
+    };
+
+    // 處理離開群組
+    const handleLeave = (groupId) => {
+        if (loading[groupId]) return;
+
+        setLoading(prev => ({ ...prev, [groupId]: true }));
+        console.log(groupId);
+        router.post(route('groups.leave'), {
+            group_id: groupId,
+        }, {
+            onSuccess: () => {
+                setLoading(prev => ({ ...prev, [groupId]: false }));
+            },
+            onError: () => {
+                setLoading(prev => ({ ...prev, [groupId]: false }));
+                alert('離開群組失敗');
             },
         });
     };
@@ -57,9 +80,22 @@ export default function Index() {
                                                 擁有者
                                             </span>
                                         ) : group.is_member ? (
-                                            <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                                            <div>
+                                                <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
                                                 成員
                                             </span>
+                                            <button
+                                                onClick={() => handleLeave(group.id)}
+                                                disabled={loading[group.id]}
+                                                className={`text-white font-bold py-1 px-3 rounded text-sm
+                                                    ${loading[group.id] 
+                                                        ? 'ml-4 bg-gray-400 cursor-not-allowed'
+                                                        : 'ml-4 bg-red-500 hover:bg-red-700'
+                                                    }`}
+                                            >
+                                                {loading[group.id] ? '處理中...' : '離開群組'}
+                                            </button>
+                                            </div>
                                         ) : (
                                             <button
                                                 onClick={() => handleJoin(group.id)}
