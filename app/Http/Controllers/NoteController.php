@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\Group;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,7 +22,10 @@ class NoteController extends Controller
     // 2️⃣ 顯示新增筆記表單
     public function create()
     {
-        return Inertia::render('Notes/Create');
+        $userGroups = auth()->user()->groups()->get();
+        return Inertia::render('Notes/Create', [
+            'userGroups' => $userGroups
+        ]);
     }
 
     // 3️⃣ 儲存新筆記
@@ -29,20 +34,31 @@ class NoteController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'permissions' => 'required|integer',
+            'visibility' => 'required|string|in:private,group,public',  // 修改這裡
+            'group_id' => 'nullable|integer|exists:groups,id',
         ], [
             'title.required' => '標題不能為空！',
             'title.string' => '標題必須是文字。',
             'title.max' => '標題不能超過255個字。',
             'content.required' => '內容不能為空！',
             'content.string' => '內容必須是文字。',
+            'visibility.required' => '可見度不能為空！',
+            'visibility.in' => '可見度必須是 private、group 或 public',  // 新增這行
+            'group_id.exists' => '選擇的群組不存在。'
         ]);
 
         // 添加當前認證用戶的 ID 作為 owner_id
         $validated['owner_id'] = auth()->id();
-        $validated['group_id'] = $validated['group_id'] ?? null;
 
-        Note::create($validated);
+        // 如果不是群組，就清空 group_id
+        if ($validated['visibility'] !== 'group') {
+            $validated['group_id'] = null;
+        }
+
+        // 建立筆記前先確認資料
+        \Log::info('Creating note with data:', $validated);  // 新增這行來記錄資料
+
+        $note = Note::create($validated);
 
         return redirect()->route('notes.index')->with('success', '筆記已儲存！');
     }
@@ -50,7 +66,7 @@ class NoteController extends Controller
     // 4️⃣ 顯示單篇筆記
     public function show(Note $note)
     {
-        
+
     }
 
     // 5️⃣ 顯示編輯筆記表單
@@ -58,6 +74,7 @@ class NoteController extends Controller
     {
         $note->load('owner');
         $note->load('group');
+        $note->is_archived = $note->visibility === 444;
         return Inertia::render('Notes/Edit', [
             'note' => $note
         ]);
@@ -69,17 +86,30 @@ class NoteController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'visibility' => 'required|string',
+            'group_id' => 'nullable|integer|exists:groups,id',
         ], [
             'title.required' => '標題不能為空！',
             'title.string' => '標題必須是文字。',
             'title.max' => '標題不能超過255個字。',
             'content.required' => '內容不能為空！',
             'content.string' => '內容必須是文字。',
+            'visibility.required' => '可見度不能為空！',
+            'visibility.in' => '可見度必須是 private、group 或 public。',
+            'group_id.exists' => '選擇的群組不存在。'
         ]);
 
         $note->update($validated);
-        return redirect()->route('notes.edit', $note->id)
-                ->with('success', '筆記更新成功！');
+        $note->refresh();
+        $note->load('owner');
+        $note->load('group');
+        $note->is_archived = $note->visibility === 444;
+
+        return Inertia::render('Notes/Edit', [
+            'note' => $note,
+            'success' => true,
+            'message' => '筆記更新成功！'
+        ]);
     }
 
     // 7️⃣ 刪除筆記

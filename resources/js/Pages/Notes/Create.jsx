@@ -1,12 +1,15 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, useForm, Link } from "@inertiajs/react";
+import { Head, useForm, Link, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
 export default function Create() {
+    const { userGroups } = usePage().props;
     const { data, setData, post, processing, errors } = useForm({
         title: "",
         content: "",
-        permissions: 600,
+        visibility: 'private',
+        group_id: "",
+        userGroups: [],
     });
     const noteSubmit = (e) => {
         e.preventDefault();
@@ -23,18 +26,39 @@ export default function Create() {
                     <div className="flex justify-end items-center">
                         <span className="mr-2 font-semibold">權限：</span>
                         <select
-                            id="permissions"
-                            value={data.permissions}
+                            id="visibility"
+                            value={data.visibility}
                             onChange={(e) =>
-                                setData("permissions", parseInt(e.target.value))
+                                setData("visibility", e.target.value)
                             }
                             className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
                         >
-                            <option value="600">私密</option>
-                            <option value="666">公開(所有人皆可讀寫)</option>
-                            <option value="644">標準(同群組、其他人可讀)</option>
-                            <option value="444">唯讀</option>
+                            <option value="private">私密</option>
+                            <option value="group">群組</option>
+                            <option value="public">公開</option>
                         </select>
+                        {/* 當選擇群組時顯示群組選擇器 */}
+                        {data.visibility === 'group' && (
+                            <div className="ml-4 flex items-center">
+                                <span className="mr-2 font-semibold">選擇群組：</span>
+                                <select
+                                    id="group_id"
+                                    value={data.group_id}
+                                    onChange={(e) =>
+                                        setData("group_id", e.target.value)
+                                    }
+                                    className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                                    required={data.visibility === 'group'}
+                                >
+                                    <option value="">請選擇群組</option>
+                                    {userGroups.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 </div>
             }

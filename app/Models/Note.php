@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes; // 軟刪除
 class Note extends Model
 {
     use HasFactory, SoftDeletes; // 使用軟刪除
-    protected $fillable = ['title', 'content', 'owner_id', 'group_id', 'permissions'];
+    protected $fillable = ['title', 'content', 'owner_id', 'group_id', 'visibility'];
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');

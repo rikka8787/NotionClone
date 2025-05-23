@@ -3,6 +3,7 @@ import { Head, Link, usePage } from "@inertiajs/react";
 
 export default function Index() {
     const { notes } = usePage().props;
+    console.log(notes);
     const noteClick = (id) => {
         window.location.href = route("notes.edit", id);
     };
@@ -38,15 +39,20 @@ export default function Index() {
                                             }
                                             className="mb-4 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors duration-150"
                                         >
-                                            <h3 className="text-xl font-bold">
-                                                {note.title}
-                                            </h3>
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-xl font-bold">
+                                                    {note.title}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 mt-1">
+                                                    所有者: {note.owner.name}
+                                                </p>
+                                            </div>
                                             <p className="mt-2">
                                                 {note.content.length > 10
                                                     ? `${note.content.substring(
-                                                          0,
-                                                          10
-                                                      )}...`
+                                                        0,
+                                                        10
+                                                    )}...`
                                                     : note.content}
                                             </p>
                                             <div className="flex justify-end mt-2"></div>

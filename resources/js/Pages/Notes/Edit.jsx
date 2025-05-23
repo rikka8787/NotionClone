@@ -3,38 +3,57 @@ import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 
 export default function Edit() {
-    const [ canEdit, setCanEdit ] = useState(false);
+    const [canEdit, setCanEdit] = useState(false);
+    const [isArchive, setIsArchive] = useState(false);
     const { note, auth } = usePage().props;
     const { data, setData, put, processing, errors } = useForm({
         title: note.title,
         content: note.content,
-        permissions: note.permissions,
+        visibility: note.visibility,
     });
 
-    useEffect(() => {
-        // 檢查當前用戶是否有寫入權限
-        setCanEdit(hasWritePermission());
-    },[]);
 
-    // 檢查當前用戶是否有寫入權限
+    useEffect(() => {
+        // 檢查當前用戶是否有權限
+        setCanEdit(hasWritePermission());
+        setIsArchive(note.is_archived);
+        console.log(note.is_archived);
+        console.log(isArchive);
+    }, []);
+
+
+    // 檢查當前用戶是否有權限
     const hasWritePermission = () => {
-        const permissions = String(note.permissions).padStart(3, 0);
-        if(note.owner.id === auth.user.id) {                // 擁有者
-            return (parseInt(permissions[0]) & 2) > 0;
-        } else if(note.group_id === auth.user.group_id) {   // 同群組
-            return (parseInt(permissions[1]) & 2) > 0;
-        } else {                                            // 其他人
-            return (parseInt(permissions[2]) & 2) > 0;
+        if(note.visibility == 'private' && auth.user.id == note.owner.id) {
+            return true;
         }
+        if(note.visibility == 'group' && note.group_members.includes(auth.user.id)) {
+            return true;
+        }
+        if(note.visibility == 'public') {
+            return true;
+        }
+        return false;
     }
 
     // 更新筆記處理
     const handleSubmit = (e) => {
+        console.log(data);
         e.preventDefault();
         put(route("notes.update", note.id), {
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
+                const updatedNote = page.props.note;
+                console.log('更新後的資料：', updatedNote);
+
+                // 直接使用更新後的權限來設定封存狀態
+                setIsArchive(updatedNote.visibility === 444);
+                setData(prevData => ({
+                    ...prevData,
+                    visibility: updatedNote.visibility
+                }));
+
                 alert("筆記已更新！");
             },
             onError: (errors) => {
@@ -46,7 +65,7 @@ export default function Edit() {
     // 刪除處理
     const handleDelete = () => {
         if (confirm("確定要刪除這個筆記嗎？")) {
-            if(auth.user.id != note.owner.id) {
+            if (auth.user.id != note.owner.id) {
                 alert("你沒有權限刪除這個筆記！");
                 return;
             }
@@ -73,17 +92,16 @@ export default function Edit() {
                     <div className="flex justify-end items-center">
                         <span className="mr-2 font-semibold">權限：</span>
                         <select
-                            id="permissions"
-                            value={data.permissions}
+                            id="visibility"
+                            value={data.visibility}
                             onChange={(e) =>
-                                setData("permissions", parseInt(e.target.value))
+                                setData("visibility", e.target.value)
                             }
                             className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
                         >
-                            <option value="600">私密</option>
-                            <option value="666">公開(所有人皆可讀寫)</option>
-                            <option value="644">標準(同群組、其他人可讀)</option>
-                            <option value="444">唯讀</option>
+                            <option value="private">私密</option>
+                            <option value="group">群組</option>
+                            <option value="public">公開</option>
                         </select>
                     </div>
                 </div>
@@ -96,7 +114,11 @@ export default function Edit() {
                         <div className="p-6 text-gray-900">
                             <div className="mb-4 flex justify-between items-center">
                                 <span className="font-semibold">擁有者：{note.owner.name}</span>
-                                <span className="font-semibold text-red-600">已封存</span>                         
+                                {isArchive && (
+                                    <span className="text-red-500 font-semibold">
+                                        已封存
+                                    </span>
+                                )}
                             </div>
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-0">
@@ -150,11 +172,10 @@ export default function Edit() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className={`relative top-0 right-0 text-white font-bold py-2 px-4 rounded ${
-                                            canEdit
+                                        className={`relative top-0 right-0 text-white font-bold py-2 px-4 rounded ${canEdit
                                                 ? "bg-blue-500 hover:bg-blue-700"
                                                 : "bg-gray-500 hover:bg-gray-700 cursor-not-allowed"
-                                        }`}
+                                            }`}
                                         disabled={!canEdit || processing}
                                         title={!canEdit ? "無編輯權限" : ""}
                                     >
