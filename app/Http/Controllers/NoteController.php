@@ -13,7 +13,21 @@ class NoteController extends Controller
     // 1️⃣ 列出所有筆記
     public function index()
     {
-        $notes = Note::with('owner')->get();
+        $userId = auth()->id();
+        $userGroupIds = auth()->user()->groups()->pluck('groups.id')->toArray();
+
+        $notes = Note::with(['owner', 'group'])
+            ->where(function ($query) use ($userId, $userGroupIds) {
+                $query->where('owner_id', $userId)  // 自己的筆記
+                    ->orWhere('visibility', 'public')  // 公開筆記
+                    ->orWhere(function ($q) use ($userGroupIds) {
+                        $q->where('visibility', 'group')
+                            ->whereIn('group_id', $userGroupIds);  // 使用者所屬群組的筆記
+                    });
+            })
+            ->latest()  // 依建立時間排序
+            ->get();
+
         return Inertia::render('Notes/Index', [
             'notes' => $notes
         ]);
@@ -72,11 +86,22 @@ class NoteController extends Controller
     // 5️⃣ 顯示編輯筆記表單
     public function edit(Note $note)
     {
-        $note->load('owner');
-        $note->load('group');
-        $note->is_archived = $note->visibility === 444;
+        // 載入關聯資料
+        $note->load(['owner', 'group.users']);  // 加入 group.users 來載入群組成員
+
+        // 加入群組成員資料
+        if ($note->group) {
+            $note->group_members = $note->group->users->pluck('id')->toArray();
+        } else {
+            $note->group_members = [];
+        }
+
+        // 取得使用者的群組
+        $userGroups = auth()->user()->groups()->with('users')->get();
+
         return Inertia::render('Notes/Edit', [
-            'note' => $note
+            'note' => $note,
+            'userGroups' => $userGroups,
         ]);
     }
 
@@ -101,12 +126,19 @@ class NoteController extends Controller
 
         $note->update($validated);
         $note->refresh();
-        $note->load('owner');
-        $note->load('group');
-        $note->is_archived = $note->visibility === 444;
+        $note->load(['owner', 'group.users']);  // 加入 group.users 來載入群組成員
+        if ($note->group) {
+            $note->group_members = $note->group->users->pluck('id')->toArray();
+        } else {
+            $note->group_members = [];
+        }
+
+        // 取得使用者的群組
+        $userGroups = auth()->user()->groups()->with('users')->get();
 
         return Inertia::render('Notes/Edit', [
             'note' => $note,
+            'userGroups' => $userGroups,
             'success' => true,
             'message' => '筆記更新成功！'
         ]);

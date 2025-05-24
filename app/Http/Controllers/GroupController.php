@@ -97,13 +97,18 @@ class GroupController extends Controller
 
     public function show(Group $group)
     {
-
+        
     }
 
 
     public function edit(Group $group)
     {
-
+        $users = User::where('id', '!=', auth()->id())->get();
+        $group->load('users');
+        return Inertia::render('Groups/Edit', [
+            'group' => $group,
+            'users' => $users
+        ]);
     }
 
     public function update(Request $request, Group $group)

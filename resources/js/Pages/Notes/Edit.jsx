@@ -4,37 +4,38 @@ import { useState, useEffect } from "react";
 
 export default function Edit() {
     const [canEdit, setCanEdit] = useState(false);
-    const [isArchive, setIsArchive] = useState(false);
-    const { note, auth } = usePage().props;
+    const { note, auth, userGroups } = usePage().props;
     const { data, setData, put, processing, errors } = useForm({
         title: note.title,
         content: note.content,
         visibility: note.visibility,
+        group_id: note.group ? note.group.id.toString() : "",
+        userGroups: [],
     });
-
+    console.log(note);
 
     useEffect(() => {
         // 檢查當前用戶是否有權限
         setCanEdit(hasWritePermission());
-        setIsArchive(note.is_archived);
-        console.log(note.is_archived);
-        console.log(isArchive);
     }, []);
-
 
     // 檢查當前用戶是否有權限
     const hasWritePermission = () => {
-        if(note.visibility == 'private' && auth.user.id == note.owner.id) {
+        console.log(note.visibility);
+        if (note.visibility == "private" && auth.user.id == note.owner.id) {
             return true;
         }
-        if(note.visibility == 'group' && note.group_members.includes(auth.user.id)) {
+        if (
+            note.visibility == "group" &&
+            note.group_members.includes(auth.user.id)
+        ) {
             return true;
         }
-        if(note.visibility == 'public') {
+        if (note.visibility == "public") {
             return true;
         }
         return false;
-    }
+    };
 
     // 更新筆記處理
     const handleSubmit = (e) => {
@@ -45,13 +46,13 @@ export default function Edit() {
             preserveState: true,
             onSuccess: (page) => {
                 const updatedNote = page.props.note;
-                console.log('更新後的資料：', updatedNote);
+                console.log("更新後的資料：", updatedNote);
 
                 // 直接使用更新後的權限來設定封存狀態
-                setIsArchive(updatedNote.visibility === 444);
-                setData(prevData => ({
+
+                setData((prevData) => ({
                     ...prevData,
-                    visibility: updatedNote.visibility
+                    visibility: updatedNote.visibility,
                 }));
 
                 alert("筆記已更新！");
@@ -70,8 +71,8 @@ export default function Edit() {
                 return;
             }
             router.delete(route("notes.destroy", note.id), {
-                preserveScroll: true,   // 在頁面重新載入會保留滾動位置
-                preserveState: true,    // 在頁面重新載入會保留表單的狀態
+                preserveScroll: true, // 在頁面重新載入會保留滾動位置
+                preserveState: true, // 在頁面重新載入會保留表單的狀態
                 onSuccess: () => {
                     alert("筆記已刪除！");
                 },
@@ -80,7 +81,7 @@ export default function Edit() {
                 },
             });
         }
-    }
+    };
 
     return (
         <AuthenticatedLayout
@@ -97,12 +98,36 @@ export default function Edit() {
                             onChange={(e) =>
                                 setData("visibility", e.target.value)
                             }
-                            className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                            className="w-32 border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
                         >
                             <option value="private">私密</option>
                             <option value="group">群組</option>
                             <option value="public">公開</option>
                         </select>
+                        {/* 當選擇群組時顯示群組選擇器 */}
+                        {data.visibility === "group" && (
+                            <div className="ml-4 flex items-center">
+                                <span className="mr-2 font-semibold">
+                                    選擇群組：
+                                </span>
+                                <select
+                                    id="group_id"
+                                    value={data.group_id}
+                                    onChange={(e) =>
+                                        setData("group_id", e.target.value)
+                                    }
+                                    className="w-32 border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                                    required={data.visibility === "group"}
+                                >
+                                    <option value="">請選擇群組</option>
+                                    {userGroups.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 </div>
             }
@@ -113,12 +138,9 @@ export default function Edit() {
                     <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             <div className="mb-4 flex justify-between items-center">
-                                <span className="font-semibold">擁有者：{note.owner.name}</span>
-                                {isArchive && (
-                                    <span className="text-red-500 font-semibold">
-                                        已封存
-                                    </span>
-                                )}
+                                <span className="font-semibold">
+                                    擁有者：{note.owner.name}
+                                </span>
                             </div>
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-0">
@@ -172,10 +194,11 @@ export default function Edit() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className={`relative top-0 right-0 text-white font-bold py-2 px-4 rounded ${canEdit
+                                        className={`relative top-0 right-0 text-white font-bold py-2 px-4 rounded ${
+                                            canEdit
                                                 ? "bg-blue-500 hover:bg-blue-700"
                                                 : "bg-gray-500 hover:bg-gray-700 cursor-not-allowed"
-                                            }`}
+                                        }`}
                                         disabled={!canEdit || processing}
                                         title={!canEdit ? "無編輯權限" : ""}
                                     >

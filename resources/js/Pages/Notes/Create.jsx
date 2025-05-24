@@ -31,7 +31,7 @@ export default function Create() {
                             onChange={(e) =>
                                 setData("visibility", e.target.value)
                             }
-                            className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                            className="w-32 border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
                         >
                             <option value="private">私密</option>
                             <option value="group">群組</option>
@@ -47,7 +47,7 @@ export default function Create() {
                                     onChange={(e) =>
                                         setData("group_id", e.target.value)
                                     }
-                                    className="border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
+                                    className="w-32 border-gray-300 border-2 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:border-gray-300 p-2"
                                     required={data.visibility === 'group'}
                                 >
                                     <option value="">請選擇群組</option>
