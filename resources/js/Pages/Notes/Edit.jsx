@@ -12,7 +12,7 @@ export default function Edit() {
         group_id: note.group ? note.group.id.toString() : "",
         userGroups: [],
     });
-    console.log(note);  
+    console.log(note);   
 
     useEffect(() => {
         // 檢查當前用戶是否有權限
