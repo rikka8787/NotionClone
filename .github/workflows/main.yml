@@ -24,14 +24,15 @@ jobs:
     - name: Build project
       run: npm run build
 
-    - name: Copy build files to EC2 using SCP (no nested folders)
+    - name: Copy files to EC2 using SCP (strip folder)
       uses: appleboy/scp-action@v0.1.5
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        source: public/build/*
+        source: public/build/
         target: /var/www/html/NotionClone/public/build
+        strip_components: 2
 
     - name: Restart Apache (optional)
       uses: appleboy/ssh-action@v0.1.6
