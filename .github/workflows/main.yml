@@ -25,7 +25,7 @@ jobs:
       run: npm run build
 
     - name: Copy files to EC2 (via rsync)
-      uses: appleboy/rsync-action@v0.0.5
+      uses: appleboy/rsync-action@v0.1.2
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
